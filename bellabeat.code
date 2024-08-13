@@ -1,0 +1,36 @@
+
+SELECT id 
+FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
+--       we can add DISTINCT to make sure there are no duplicates
+SELECT 
+    DISTINCT Id 
+FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
+
+--      I will use IS NULL and IS NOT NULL to ensure there are no missing values
+SELECTSELECT *
+FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
+WHERE TotalDistance IS NULL
+
+SELECT *
+FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
+WHERE Calories IS NULL
+
+SELECT *
+FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
+WHERE TotalStepsIS NULL
+-- I made sure that all the tables I need dont have Null values so I can ensure that my analysis is accurat and reliable
+-- Those tables being TotalDistance, TotalSteps,Calories 
+
+--      I will now clean the weight_log_info table 
+
+SELECT 
+    DISTINCT Id
+     FROM `capstone-coursera-2024.bellatrix_capstone.weight_log_info` 
+
+SELECT * 
+ FROM `capstone-coursera-2024.bellatrix_capstone.weight_log_info` 
+WHERE WeightPounds IS NULL
+-- I can now compare the Id from this table with the ones in the dail_activity table
+
+-- After the Data I need has been cleaned we can get started on the ANALYZE phase 
+-- I want to see how TotalDistance, TotalSteps, and Calories affect a customers weight
