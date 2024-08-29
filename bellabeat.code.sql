@@ -13,47 +13,72 @@
 --   in this case, we are using the Fitbit Fitness Tracker Data found in Kaggle by Mobius.
 --    Then make sure that the dataset is reliable to use by checking the author, making sure its up to date, and will actually help you 
 --   answer the business task.
---     I then dowloaded the dataset, unzipped the files, made sure they were in .csv format and uploaded them into BiqQuery
+--     I then dowloaded the dataset, unzipped the files, made sure they were in .csv format and uploaded them into BiqQuery 
+-- I then used the Preview Page to see what exactly kind of data the dataset holds 
+--     *Daily Activity 
+--     * Calories: Seperated into daily,hourly, and minutes also in both Wide and Narrow format 
+--     * Intensitires: Also daily, hourly and minutes (Wide and Narrow) 
+--     * Steps: daily, houlry, and minutes (Wide and Narrow)
+--     * Heart Rate: Broken down in seconds 
+--     * Sleep: Broken down into a daily and minute log 
+--     * Weight Log: Has the weight in Kg and Pounds, Fat, and BMI
+--     * MET: Standing for Metabolic Equivalents which is the estimated measure of how much energy a given activity requires in the form of calories burned.
 
 -- Now it's time for the PROCESS phase 
 --   I decided to use SQL to clean and organize the data because there was a large amount and using SQL would be the easiest tool for me.
---     Then I use data cleaning functions like DISTINCT or LENGTH 
+--     Then I use data cleaning functions like DISTINCT or LENGTH  
+-- I decided to use Daily_calories, Daily_steps. Sleep_day, Weight_log_info, and MET to do my analysis
+-- I will now clean each table 
 
--- We can view the entire dataset before we begin using in the Preview Page
 
---       Will Select all customer id's in the daily_activity table
-SELECT id 
-FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
---       we can add DISTINCT to make sure there are no duplicates
+--       I will begin with the Daily_calories Table 
+
+-- First thing I will do is view the data using a basic SELECT statement 
+SELECT * 
+FROM capstone-coursera-2024.bellatrix_capstone.daily_calories 
+
+-- I will then check for duplicates using DISTINCT
 SELECT 
-    DISTINCT Id 
-FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
-
---      I will use IS NULL and IS NOT NULL to ensure there are no missing values
-SELECTSELECT *
-FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
-WHERE TotalDistance IS NULL
-
-SELECT *
-FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
+  DISTINCT Id
+FROM capstone-coursera-2024.bellatrix_capstone.daily_calories 
+-- This shows that I have only 33 distinct Id that I can use for analysis  
+-- I will now remove those duplicates. 
+-- I will also use TRIM to make sure that there are no extra spaces and CAST to make the Id column string 
+SELECT 
+  DISTINCT Id,Calories ,
+TRIM(CAST(Id AS STRING), " ")
+FROM capstone-coursera-2024.bellatrix_capstone.daily_calories 
+-- Then I created a new table with the cleaned data 
+CREATE OR REPLACE TABLE `capstone-coursera-2024.bellatrix_capstone.calories_cleaned` AS
+SELECT 
+  DISTINCT
+  TRIM(CAST(Id AS STRING)) AS Id,  -- Remove spaces and rename the column
+  Calories AS Calories             -- Keep Calories column as is
+FROM `capstone-coursera-2024.bellatrix_capstone.daily_calories`; 
+-- I then made sure that there were no NULL value in the Calories Column ( There were no NULL Values)
+SELECT Calories 
+FROM capstone-coursera-2024.bellatrix_capstone.calories_cleaned 
 WHERE Calories IS NULL
 
-SELECT *
-FROM capstone-coursera-2024.bellatrix_capstone.daily_activity 
-WHERE TotalStepsIS NULL
--- I made sure that all the tables I need dont have Null values so I can ensure that my analysis is accurat and reliable
--- Those tables being TotalDistance, TotalSteps,Calories 
-
---      I will now clean the weight_log_info table 
-
-SELECT 
-    DISTINCT Id
-     FROM `capstone-coursera-2024.bellatrix_capstone.weight_log_info` 
-
+-- Now I will Clean daily_steps table, following similar steps to the previous table. 
+--   I will start by previewing the table 
 SELECT * 
- FROM `capstone-coursera-2024.bellatrix_capstone.weight_log_info` 
-WHERE WeightPounds IS NULL
--- I can now compare the Id from this table with the ones in the dail_activity table
+ FROM `capstone-coursera-2024.bellatrix_capstone.daily_steps`
+  LIMIT 1000  
+-- I then clean the data 
+CREATE OR REPLACE TABLE `capstone-coursera-2024.bellatrix_capstone.daily_steps_cleaned` AS -- creates a new table
+SELECT DISTINCT    -- removes duplicates 
+  TRIM(CAST(Id as STRING)) AS Id,
+  FORMAT_DATE('%Y-%m-%d', ActivityDay) AS date,  -- formats date the same 
+  COALESCE(StepTotal, 0) AS steps  -- replaces Null Values with 0
+FROM `capstone-coursera-2024.bellatrix_capstone.daily_steps`; 
 
--- After the Data I need has been cleaned we can get started on the ANALYZE phase 
--- I want to see how TotalDistance, TotalSteps, and Calories affect a customers weight
+-- Cleaning Sleep_day 
+CREATE OR REPLACE TABLE `capstone-coursera-2024.bellatrix_capstone.sleep_day_cleaned` AS
+SELECT DISTINCT
+  Id,
+  DATE(SleepDay) AS SleepDay, -- Convert TIMESTAMP to DATE
+  COALESCE(TotalSleepRecords, 0) AS TotalSleepRecords, -- Replace NULLs with 0
+  COALESCE(TotalMinutesAsleep, 0) AS TotalMinutesAsleep, -- Replace NULLs with 0
+  COALESCE(TotalTimeInBed, 0) AS TotalTimeInBed -- Replace NULLs with 0
+FROM `capstone-coursera-2024.bellatrix_capstone.sleep_day`;
