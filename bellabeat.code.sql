@@ -82,3 +82,78 @@ SELECT DISTINCT
   COALESCE(TotalMinutesAsleep, 0) AS TotalMinutesAsleep, -- Replace NULLs with 0
   COALESCE(TotalTimeInBed, 0) AS TotalTimeInBed -- Replace NULLs with 0
 FROM `capstone-coursera-2024.bellatrix_capstone.sleep_day`;
+
+--Before I begin the next phase I make sure that I know the data_types for each table 
+-- Check the data types in daily_steps_cleaned
+SELECT column_name, data_type 
+FROM `capstone-coursera-2024.bellatrix_capstone.INFORMATION_SCHEMA.COLUMNS`
+WHERE table_name = 'daily_steps_cleaned';
+-- Check the data types in calories_cleaned
+SELECT column_name, data_type 
+FROM `capstone-coursera-2024.bellatrix_capstone.INFORMATION_SCHEMA.COLUMNS`
+WHERE table_name = 'calories_cleaned';
+-- Check the data types in sleep_day_cleaned
+SELECT column_name, data_type 
+FROM `capstone-coursera-2024.bellatrix_capstone.INFORMATION_SCHEMA.COLUMNS`
+WHERE table_name = 'sleep_day_cleaned';
+
+-- Joining the cleaned tables: daily_steps_cleaned, calories_cleaned, and sleep_day_cleaned
+SELECT 
+    s.Id AS Steps_Id,
+    s.date AS ActivityDate,
+    s.steps,
+    c.Calories,
+    sd.TotalMinutesAsleep,
+    sd.TotalTimeInBed
+FROM 
+    `capstone-coursera-2024.bellatrix_capstone.daily_steps_cleaned` AS s
+LEFT JOIN 
+    `capstone-coursera-2024.bellatrix_capstone.calories_cleaned` AS c
+    ON CAST(s.Id AS STRING) = CAST(c.Id AS STRING)  -- Ensure both Ids are cast to STRING
+    AND CAST(s.date AS DATE) = CAST(c.Date AS DATE)  -- Cast STRING dates to DATE
+LEFT JOIN 
+    `capstone-coursera-2024.bellatrix_capstone.sleep_day_cleaned` AS sd
+    ON CAST(s.Id AS STRING) = CAST(sd.Id AS STRING)  -- Ensure both Ids are cast to STRING
+    AND CAST(s.date AS DATE) = CAST(sd.SleepDay AS DATE);  -- Cast SleepDay to DATE for comparison
+
+-- After I joined those tables I added a CREATE TABLE clause to create a new table with those results
+CREATE TABLE `capstone-coursera-2024.bellatrix_capstone.activity_summary` AS
+SELECT 
+    s.Id AS Steps_Id,
+    s.date AS ActivityDate,
+    s.steps,
+    c.Calories,
+    sd.TotalMinutesAsleep,
+    sd.TotalTimeInBed
+FROM 
+    `capstone-coursera-2024.bellatrix_capstone.daily_steps_cleaned` AS s
+LEFT JOIN 
+    `capstone-coursera-2024.bellatrix_capstone.calories_cleaned` AS c
+    ON CAST(s.Id AS STRING) = CAST(c.Id AS STRING)  -- Ensure both Ids are cast to STRING
+    AND CAST(s.date AS DATE) = CAST(c.Date AS DATE)  -- Cast STRING dates to DATE
+LEFT JOIN 
+    `capstone-coursera-2024.bellatrix_capstone.sleep_day_cleaned` AS sd
+    ON CAST(s.Id AS STRING) = CAST(sd.Id AS STRING)  -- Ensure both Ids are cast to STRING
+    AND CAST(s.date AS DATE) = CAST(sd.SleepDay AS DATE);  -- Cast SleepDay to DATE for comparison
+
+-- I then calulated the Average steps and calories for each day of the week 
+SELECT 
+    EXTRACT(DAYOFWEEK FROM CAST(ActivityDate AS DATE)) AS DayOfWeek,  -- 1 = Sunday, 7 = Saturday
+    AVG(steps) AS avg_steps,
+    AVG(Calories) AS avg_calories
+FROM 
+    `capstone-coursera-2024.bellatrix_capstone.activity_summary`
+GROUP BY 
+    DayOfWeek
+ORDER BY 
+    DayOfWeek 
+-- I would then use the INSERT INTO function to insert into the activity_summary, however I did not have the paid option of Biq SQL so I used Create Table instead
+CREATE TABLE `capstone-coursera-2024.bellatrix_capstone.daily_averages` AS
+SELECT 
+    EXTRACT(DAYOFWEEK FROM CAST(ActivityDate AS DATE)) AS DayOfWeek,  -- 1 = Sunday, 7 = Saturday
+    AVG(steps) AS avg_steps,
+    AVG(Calories) AS avg_calories
+FROM 
+    `capstone-coursera-2024.bellatrix_capstone.activity_summary`
+GROUP BY 
+    DayOfWeek;
